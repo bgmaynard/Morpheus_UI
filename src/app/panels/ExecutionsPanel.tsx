@@ -13,7 +13,7 @@ interface Props {
   container: ComponentContainer;
 }
 
-export function ExecutionsPanel({ container }: Props) {
+export function ExecutionsPanel({ container: _container }: Props) {
   const executions = useExecutions();
 
   const formatTime = (ts: string) => {
@@ -25,6 +25,9 @@ export function ExecutionsPanel({ container }: Props) {
       <div className="morpheus-panel-header">
         <span className="panel-title">Executions</span>
         <span className="text-muted">Today: {executions.length}</span>
+      </div>
+      <div className="executions-info-banner">
+        Morpheus orders only - manual TOS trades not shown
       </div>
       <div className="morpheus-panel-content">
         <table className="data-table">

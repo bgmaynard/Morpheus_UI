@@ -837,6 +837,71 @@
   min-height: 200px;
 }
 
+/* Chart panel drag handles for resizing volume/MACD */
+.chart-drag-handle {
+  position: absolute;
+  left: 0;
+  right: 50px; /* Leave space for price scale */
+  height: 6px;
+  margin-top: -3px;
+  background: transparent;
+  cursor: ns-resize;
+  z-index: 20;
+  transition: background 0.15s ease;
+}
+
+.chart-drag-handle::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 2px;
+  background: var(--border-color);
+  border-radius: 1px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.chart-drag-handle:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.chart-drag-handle:hover::before {
+  opacity: 1;
+  background: var(--text-muted);
+}
+
+/* Chart panel timeframe selector */
+.chart-timeframe-selector {
+  display: flex;
+  gap: 2px;
+  margin-right: 8px;
+}
+
+.chart-tf-btn {
+  padding: 2px 6px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  color: var(--text-muted);
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.chart-tf-btn:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.chart-tf-btn.active {
+  background: var(--color-info);
+  border-color: var(--color-info);
+  color: #fff;
+}
+
 .chart-placeholder-overlay {
   position: absolute;
   top: 0;
@@ -1189,4 +1254,271 @@
 
 .ds-countdown-value.countdown-expired {
   color: var(--text-muted);
+}
+
+/* Executions Panel Info Banner */
+.executions-info-banner {
+  font-size: 10px;
+  color: var(--text-muted);
+  background: var(--bg-secondary);
+  padding: 4px 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* Orders Panel Filter Tabs */
+.orders-filter-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+}
+
+.filter-tab {
+  flex: 1;
+  padding: 6px 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border-bottom: 2px solid transparent;
+}
+
+.filter-tab:hover {
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+}
+
+.filter-tab.active {
+  color: var(--text-primary);
+  border-bottom-color: var(--color-info);
+}
+
+.tab-count {
+  display: inline-block;
+  min-width: 16px;
+  height: 16px;
+  line-height: 16px;
+  padding: 0 4px;
+  margin-left: 4px;
+  background: var(--color-info);
+  color: #fff;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Status Badge Colors - Updated */
+.status-badge.working {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+.status-badge.open {
+  background: var(--color-info);
+  color: #fff;
+}
+
+.status-badge.partial {
+  background: #9C27B0;
+  color: #fff;
+}
+
+.status-badge.filled {
+  background: var(--color-long);
+  color: #000;
+}
+
+.status-badge.cancelled,
+.status-badge.rejected {
+  background: var(--color-short);
+  color: #fff;
+}
+
+/* Decision Support Panel - Compact Layout */
+.decision-support-panel-compact {
+  display: flex;
+  flex-direction: column;
+}
+
+.decision-support-panel-compact .morpheus-panel-content {
+  padding: 0;
+}
+
+.dsc-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.dsc-row {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.dsc-row:last-child {
+  border-bottom: none;
+}
+
+/* Row 1: State + Countdown */
+.dsc-row-primary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-secondary);
+  padding: 8px 10px;
+}
+
+.dsc-state-badge {
+  font-size: 14px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 4px;
+  letter-spacing: 1px;
+}
+
+.dsc-state-badge.ready {
+  background: var(--color-long);
+  color: #000;
+  animation: pulse-ready 2s infinite;
+}
+
+.dsc-state-badge.blocked {
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+}
+
+.dsc-countdown {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dsc-countdown-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.dsc-countdown-value {
+  font-size: 20px;
+  font-weight: 700;
+  font-family: 'Consolas', 'Monaco', monospace;
+  min-width: 50px;
+  text-align: right;
+}
+
+/* Row 2: Symbol | Direction | Reasons */
+.dsc-row-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dsc-symbol {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.dsc-direction {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+
+.dsc-direction.long {
+  background: var(--color-long);
+  color: #000;
+}
+
+.dsc-direction.short {
+  background: var(--color-short);
+  color: #fff;
+}
+
+.dsc-direction.none {
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+}
+
+.dsc-reasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.dsc-reason-chip {
+  font-size: 9px;
+  padding: 2px 6px;
+  background: rgba(255, 71, 87, 0.2);
+  color: var(--color-short);
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.dsc-reason-more {
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+}
+
+/* Row 3: Confirm Button */
+.dsc-row-action {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+}
+
+.dsc-confirm-btn {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dsc-confirm-btn.ready {
+  background: var(--color-long);
+  color: #000;
+}
+
+.dsc-confirm-btn.ready:hover {
+  background: #00ff7f;
+}
+
+.dsc-confirm-btn.blocked {
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.dsc-confirm-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.dsc-result {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 3px;
+}
+
+.dsc-result.success {
+  background: rgba(46, 204, 113, 0.2);
+  color: var(--color-long);
+}
+
+.dsc-result.error {
+  background: rgba(231, 76, 60, 0.2);
+  color: var(--color-short);
 }

@@ -1,15 +1,13 @@
 /**
- * Decision Support Panel - Human Confirmation Entry
+ * Decision Support Panel - Human Confirmation Entry (Compact)
  *
  * Displays current Morpheus state for the active symbol to support
  * tape-synchronized human confirmation of entries.
  *
- * IMPORTANT: This panel displays ONLY existing Morpheus state.
- * No market data. No L2. No inference.
- *
- * The human reads tape in Thinkorswim, sees "READY" here,
- * presses CONFIRM ENTRY, and Morpheus executes immediately
- * (or blocks with a clear reason).
+ * Compact 3-row layout:
+ * - Row 1: READY/BLOCKED badge + Countdown
+ * - Row 2: Symbol | Direction | Block reasons (inline chips)
+ * - Row 3: Compact confirm button
  */
 
 import { ComponentContainer } from 'golden-layout';
@@ -23,16 +21,13 @@ interface Props {
 }
 
 // Signal status thresholds (milliseconds)
-// SMALL-CAP MOMENTUM OPTIMIZED:
-// - TTL 1200ms: Breakouts valid after 2-3s usually aren't the move
-// - Must match Morpheus_AI ConfirmationGuardConfig
-const CONFIRM_TTL_MS = 1200;             // 1.2 seconds (small-cap optimized)
-const SIGNAL_ARMED_THRESHOLD = 800;      // < 800ms = ARMED (green)
-const SIGNAL_EXPIRING_THRESHOLD = CONFIRM_TTL_MS; // >= TTL = STALE
+const CONFIRM_TTL_MS = 1200;
+const SIGNAL_ARMED_THRESHOLD = 800;
+const SIGNAL_EXPIRING_THRESHOLD = CONFIRM_TTL_MS;
 
 // Countdown color thresholds
-const COUNTDOWN_GREEN_THRESHOLD = 800;   // > 800ms = green
-const COUNTDOWN_YELLOW_THRESHOLD = 400;  // 400-800ms = yellow, < 400ms = red
+const COUNTDOWN_GREEN_THRESHOLD = 800;
+const COUNTDOWN_YELLOW_THRESHOLD = 400;
 
 type SignalStatus = 'NONE' | 'ARMED' | 'EXPIRING' | 'STALE';
 type ExecutionState = 'BLOCKED' | 'READY';
@@ -42,7 +37,7 @@ interface BlockReason {
   message: string;
 }
 
-export function DecisionSupportPanel({ container }: Props) {
+export function DecisionSupportPanel({ container: _container }: Props) {
   const activeChain = useActiveChain();
   const activeChainId = useAppStore((s) => s.activeChainId);
   const setChainSymbol = useAppStore((s) => s.setChainSymbol);
@@ -69,7 +64,6 @@ export function DecisionSupportPanel({ container }: Props) {
   }, [symbolInput, activeChain.symbol, activeChainId, setChainSymbol]);
 
   // Real-time signal age tracking
-  const [signalAge, setSignalAge] = useState<number | null>(null);
   const [signalStatus, setSignalStatus] = useState<SignalStatus>('NONE');
   const [countdownRemaining, setCountdownRemaining] = useState<number | null>(null);
   const [confirmPending, setConfirmPending] = useState(false);
@@ -78,7 +72,6 @@ export function DecisionSupportPanel({ container }: Props) {
   // Update signal age every 100ms
   useEffect(() => {
     if (!decisionChain?.signal?.timestamp) {
-      setSignalAge(null);
       setSignalStatus('NONE');
       setCountdownRemaining(null);
       return;
@@ -87,9 +80,7 @@ export function DecisionSupportPanel({ container }: Props) {
     const updateAge = () => {
       const signalTime = new Date(decisionChain.signal!.timestamp).getTime();
       const age = Date.now() - signalTime;
-      setSignalAge(age);
 
-      // Calculate countdown remaining
       const remaining = CONFIRM_TTL_MS - age;
       setCountdownRemaining(remaining > 0 ? remaining : 0);
 
@@ -120,44 +111,36 @@ export function DecisionSupportPanel({ container }: Props) {
   const getExecutionState = useCallback((): { state: ExecutionState; reasons: BlockReason[] } => {
     const reasons: BlockReason[] = [];
 
-    // No symbol
     if (!activeChain.symbol) {
-      reasons.push({ code: 'NO_SYMBOL', message: 'No symbol selected' });
+      reasons.push({ code: 'NO_SYMBOL', message: 'No symbol' });
     }
 
-    // No signal
     if (!decisionChain?.signal) {
-      reasons.push({ code: 'NO_SIGNAL', message: 'No active signal' });
+      reasons.push({ code: 'NO_SIGNAL', message: 'No signal' });
     }
 
-    // Signal stale
     if (signalStatus === 'STALE') {
-      reasons.push({ code: 'SIGNAL_STALE', message: 'Signal expired (>4s)' });
+      reasons.push({ code: 'SIGNAL_STALE', message: 'Expired' });
     }
 
-    // Gate rejected
     if (decisionChain?.gate?.decision === 'rejected') {
-      reasons.push({ code: 'GATE_REJECTED', message: 'Gate rejected signal' });
+      reasons.push({ code: 'GATE_REJECTED', message: 'Gate rejected' });
     }
 
-    // Risk vetoed
     if (decisionChain?.risk?.decision === 'vetoed') {
-      reasons.push({ code: 'RISK_VETOED', message: 'Risk vetoed signal' });
+      reasons.push({ code: 'RISK_VETOED', message: 'Risk vetoed' });
     }
 
-    // Guard blocked
     if (decisionChain?.guard?.decision === 'block') {
-      reasons.push({ code: 'GUARD_BLOCKED', message: 'Guard blocked execution' });
+      reasons.push({ code: 'GUARD_BLOCKED', message: 'Guard blocked' });
     }
 
-    // Live mode but not armed
     if (trading.mode === 'LIVE' && !trading.liveArmed) {
-      reasons.push({ code: 'NOT_ARMED', message: 'Live trading not armed' });
+      reasons.push({ code: 'NOT_ARMED', message: 'Not armed' });
     }
 
-    // Kill switch active
     if (trading.killSwitchActive) {
-      reasons.push({ code: 'KILL_SWITCH', message: 'Kill switch active' });
+      reasons.push({ code: 'KILL_SWITCH', message: 'Kill switch' });
     }
 
     return {
@@ -188,7 +171,6 @@ export function DecisionSupportPanel({ container }: Props) {
       const client = getAPIClient();
       const result = await client.confirmEntry(payload);
 
-      // Track pending command
       addPendingCommand({
         command_id: result.command_id,
         command_type: 'CONFIRM_ENTRY',
@@ -198,28 +180,22 @@ export function DecisionSupportPanel({ container }: Props) {
 
       setConfirmResult({
         success: result.accepted,
-        message: result.accepted ? 'Confirmation sent' : (result.message || 'Rejected'),
+        message: result.accepted ? 'Sent' : (result.message || 'Rejected'),
       });
     } catch (error) {
       setConfirmResult({
         success: false,
-        message: error instanceof Error ? error.message : 'Failed to send',
+        message: error instanceof Error ? error.message : 'Failed',
       });
     } finally {
       setConfirmPending(false);
     }
   }, [executionState, decisionChain, activeChain, addPendingCommand]);
 
-  // Format signal age for display
-  const formatAge = (ms: number | null): string => {
-    if (ms === null) return '--';
-    return (ms / 1000).toFixed(1) + 's';
-  };
-
   // Format countdown for display
   const formatCountdown = (ms: number | null): string => {
     if (ms === null) return '--';
-    if (ms <= 0) return 'EXPIRED';
+    if (ms <= 0) return '0.0s';
     return (ms / 1000).toFixed(1) + 's';
   };
 
@@ -231,14 +207,8 @@ export function DecisionSupportPanel({ container }: Props) {
     return 'countdown-red';
   };
 
-  // Format price for display
-  const formatPrice = (price: number | undefined): string => {
-    if (price === undefined || price === 0) return '--';
-    return price.toFixed(2);
-  };
-
   return (
-    <div className="morpheus-panel decision-support-panel">
+    <div className="morpheus-panel decision-support-panel-compact">
       <div className="morpheus-panel-header">
         <span className="panel-title">
           <span className="chain-indicator" style={{ backgroundColor: activeChain.color }} />
@@ -262,107 +232,55 @@ export function DecisionSupportPanel({ container }: Props) {
 
       <div className="morpheus-panel-content">
         {!activeChain.symbol ? (
-          <div className="empty-message">Select a symbol to view decision support</div>
+          <div className="empty-message">Select a symbol</div>
         ) : (
-          <div className="decision-support-content">
-            {/* Symbol & Strategy */}
-            <div className="ds-section">
-              <div className="ds-row">
-                <span className="ds-label">Symbol</span>
-                <span className="ds-value ds-symbol">{activeChain.symbol}</span>
-              </div>
-              <div className="ds-row">
-                <span className="ds-label">Strategy</span>
-                <span className="ds-value">{decisionChain?.signal?.strategy_name || '--'}</span>
-              </div>
-              <div className="ds-row">
-                <span className="ds-label">Regime</span>
-                <span className="ds-value">{decisionChain?.regime?.regime || '--'}</span>
-              </div>
-            </div>
-
-            {/* Signal Status */}
-            <div className="ds-section ds-signal-section">
-              <div className="ds-row">
-                <span className="ds-label">Signal</span>
-                <span className={`ds-value ds-signal-status ${signalStatus.toLowerCase()}`}>
-                  {signalStatus}
-                </span>
-              </div>
-              <div className="ds-row">
-                <span className="ds-label">Direction</span>
-                <span className={`ds-value ds-direction ${decisionChain?.signal?.direction || ''}`}>
-                  {decisionChain?.signal?.direction?.toUpperCase() || '--'}
-                </span>
-              </div>
-            </div>
-
-            {/* Confirm Window Countdown - PROMINENT */}
-            <div className="ds-section ds-countdown-section">
-              <div className="ds-countdown-label">CONFIRM WINDOW</div>
-              <div className={`ds-countdown-value ${getCountdownColor(countdownRemaining)}`}>
-                {formatCountdown(countdownRemaining)}
-              </div>
-            </div>
-
-            {/* Price Levels */}
-            <div className="ds-section">
-              <div className="ds-row">
-                <span className="ds-label">Entry</span>
-                <span className="ds-value ds-price">{formatPrice(decisionChain?.signal?.entry_price)}</span>
-              </div>
-              <div className="ds-row">
-                <span className="ds-label">Stop</span>
-                <span className="ds-value ds-price ds-stop">{formatPrice(decisionChain?.signal?.stop_price)}</span>
-              </div>
-              <div className="ds-row">
-                <span className="ds-label">Target</span>
-                <span className="ds-value ds-price ds-target">{formatPrice(decisionChain?.signal?.target_price)}</span>
-              </div>
-            </div>
-
-            {/* Position Size */}
-            <div className="ds-section">
-              <div className="ds-row">
-                <span className="ds-label">Size</span>
-                <span className="ds-value ds-size">
-                  {decisionChain?.risk?.position_size?.shares || '--'} shares
-                </span>
-              </div>
-            </div>
-
-            {/* Execution State */}
-            <div className="ds-section ds-execution-section">
-              <div className={`ds-execution-state ${executionState.toLowerCase()}`}>
+          <div className="dsc-content">
+            {/* Row 1: State Badge + Countdown */}
+            <div className="dsc-row dsc-row-primary">
+              <div className={`dsc-state-badge ${executionState.toLowerCase()}`}>
                 {executionState}
               </div>
-              {blockReasons.length > 0 && (
-                <div className="ds-block-reasons">
-                  {blockReasons.map((reason) => (
-                    <div key={reason.code} className="ds-block-reason">
-                      {reason.message}
-                    </div>
-                  ))}
-                </div>
-              )}
+              <div className="dsc-countdown">
+                <span className="dsc-countdown-label">TTL</span>
+                <span className={`dsc-countdown-value ${getCountdownColor(countdownRemaining)}`}>
+                  {formatCountdown(countdownRemaining)}
+                </span>
+              </div>
             </div>
 
-            {/* Confirm Button */}
-            <div className="ds-section ds-confirm-section">
+            {/* Row 2: Symbol | Direction | Block Reasons */}
+            <div className="dsc-row dsc-row-info">
+              <span className="dsc-symbol">{activeChain.symbol}</span>
+              <span className={`dsc-direction ${decisionChain?.signal?.direction || 'none'}`}>
+                {decisionChain?.signal?.direction?.toUpperCase() || '--'}
+              </span>
+              <div className="dsc-reasons">
+                {blockReasons.slice(0, 3).map((reason) => (
+                  <span key={reason.code} className="dsc-reason-chip">
+                    {reason.message}
+                  </span>
+                ))}
+                {blockReasons.length > 3 && (
+                  <span className="dsc-reason-chip dsc-reason-more">
+                    +{blockReasons.length - 3}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Row 3: Confirm Button */}
+            <div className="dsc-row dsc-row-action">
               <button
-                className={`ds-confirm-btn ${executionState === 'READY' ? 'ready' : 'blocked'}`}
+                className={`dsc-confirm-btn ${executionState === 'READY' ? 'ready' : 'blocked'}`}
                 onClick={handleConfirmEntry}
                 disabled={executionState !== 'READY' || confirmPending}
               >
                 {confirmPending ? 'CONFIRMING...' : 'CONFIRM ENTRY'}
               </button>
-              <div className="ds-hotkey-hint">
-                Hotkey: <kbd>Ctrl</kbd> + <kbd>Enter</kbd>
-              </div>
               {confirmResult && (
-                <div className={`ds-confirm-result ${confirmResult.success ? 'success' : 'error'}`}>
+                <span className={`dsc-result ${confirmResult.success ? 'success' : 'error'}`}>
                   {confirmResult.message}
-                </div>
+                </span>
               )}
             </div>
           </div>

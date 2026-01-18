@@ -185,3 +185,135 @@
 .panel-menu-item.reset-item {
   color: var(--warning-color, #f39c12);
 }
+
+/* Layout Menu */
+.layout-menu-container {
+  position: relative;
+}
+
+.layout-menu-btn {
+  padding: 4px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.layout-menu-btn:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-color: var(--border-active);
+}
+
+.layout-menu-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.layout-menu-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  min-width: 180px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.layout-menu-item {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.layout-menu-item:hover {
+  background: var(--bg-tertiary);
+}
+
+.layout-menu-divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 4px 0;
+}
+
+.layout-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px 4px 12px;
+}
+
+.layout-name {
+  flex: 1;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.layout-delete-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 10px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 3px;
+  opacity: 0.5;
+  transition: all 0.15s ease;
+}
+
+.layout-delete-btn:hover {
+  background: var(--color-short);
+  color: #fff;
+  opacity: 1;
+}
+
+.save-as-input-row {
+  display: flex;
+  gap: 4px;
+  padding: 4px 8px;
+}
+
+.save-as-input {
+  flex: 1;
+  padding: 4px 8px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  color: var(--text-primary);
+  font-size: 11px;
+  outline: none;
+}
+
+.save-as-input:focus {
+  border-color: var(--color-info);
+}
+
+.save-as-confirm {
+  padding: 4px 8px;
+  background: var(--color-info);
+  border: none;
+  border-radius: 3px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.save-as-confirm:hover {
+  background: #4fa3d1;
+}

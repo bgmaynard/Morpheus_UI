@@ -270,10 +270,20 @@ export function App() {
   useEffect(() => {
     if (!layoutContainerRef.current) return;
 
-    // Clear any old corrupted layout and use default
-    // TODO: Re-enable layout persistence after fixing format
-    localStorage.removeItem('morpheus-layout');
-    const layoutConfig = DEFAULT_LAYOUT;
+    // Try to load saved layout from localStorage
+    let layoutConfig = DEFAULT_LAYOUT;
+    try {
+      const savedLayout = localStorage.getItem('morpheus-layout');
+      if (savedLayout) {
+        const parsed = JSON.parse(savedLayout);
+        // Validate that it has the required structure
+        if (parsed && parsed.root) {
+          layoutConfig = parsed;
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to load saved layout, using default:', err);
+    }
 
     const goldenLayout = new GoldenLayout(layoutContainerRef.current);
 
