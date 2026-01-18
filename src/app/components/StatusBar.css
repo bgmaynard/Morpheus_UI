@@ -1,0 +1,103 @@
+/* Status Bar Styles */
+
+.status-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 4px 12px;
+  background: var(--bg-header);
+  border-top: 1px solid var(--border-color);
+  min-height: 28px;
+  font-size: 11px;
+}
+
+.status-section {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-short);
+}
+
+.status-indicator.connected {
+  background: var(--color-long);
+}
+
+.status-indicator.connecting {
+  background: var(--color-neutral);
+  animation: pulse 1s infinite;
+}
+
+.status-indicator.disconnected {
+  background: var(--color-short);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.status-text {
+  color: var(--text-secondary);
+}
+
+.status-label {
+  color: var(--text-muted);
+}
+
+.status-value {
+  color: var(--text-primary);
+  font-family: monospace;
+}
+
+.status-spacer {
+  flex: 1;
+}
+
+.trading-mode {
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.trading-mode.paper {
+  background: var(--color-info);
+  color: #fff;
+}
+
+.trading-mode.live {
+  background: var(--color-neutral);
+  color: #000;
+}
+
+.trading-mode.live.armed {
+  background: var(--color-short);
+  color: #fff;
+  animation: pulse-danger 1s infinite;
+}
+
+@keyframes pulse-danger {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.kill-switch-active {
+  padding: 2px 8px;
+  border-radius: 3px;
+  background: var(--color-short);
+  color: #fff;
+  font-weight: 700;
+  animation: blink 0.5s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}

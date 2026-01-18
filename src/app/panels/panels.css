@@ -1,0 +1,1192 @@
+/* Shared Panel Styles */
+
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  font-size: 12px;
+}
+
+.chain-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+/* Symbol Input - editable symbol field in panel headers */
+.symbol-input {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 3px;
+  width: 80px;
+  text-transform: uppercase;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.symbol-input:hover {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+
+.symbol-input:focus {
+  background: var(--bg-secondary);
+  border-color: var(--color-info);
+}
+
+.symbol-input::placeholder {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.timeframe-label {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.last-price {
+  margin-left: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.loading-badge {
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.mode-badge {
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.mode-badge.paper {
+  background: var(--color-info);
+  color: #fff;
+}
+
+.mode-badge.live {
+  background: var(--color-neutral);
+  color: #000;
+}
+
+/* Chart Panel */
+.chart-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.placeholder-message {
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.placeholder-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.placeholder-text {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* Watchlist Panel */
+.watchlist-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.watchlist-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.watchlist-add-row {
+  display: flex;
+  gap: 4px;
+  padding: 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.watchlist-add-input {
+  flex: 1;
+  width: auto;
+}
+
+.btn-add {
+  padding: 2px 8px;
+  font-size: 14px;
+  font-weight: 700;
+  background: var(--color-info);
+  border-color: var(--color-info);
+  color: #fff;
+}
+
+.btn-add:hover {
+  background: #4fa3d1;
+}
+
+.btn-remove {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  transition: all 0.15s ease;
+  opacity: 0;
+}
+
+.watchlist-table tr:hover .btn-remove {
+  opacity: 1;
+}
+
+.btn-remove:hover {
+  background: var(--color-short);
+  color: #fff;
+}
+
+.remove-cell {
+  width: 30px;
+  padding: 0 4px;
+}
+
+.watchlist-table .symbol-cell {
+  font-weight: 600;
+}
+
+.watchlist-table tr.selected {
+  background: var(--bg-tertiary);
+}
+
+.market-status-badge {
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.market-status-badge.offline {
+  background: var(--color-short);
+  color: #fff;
+}
+
+.market-data-warning {
+  padding: 8px 12px;
+  background: rgba(255, 71, 87, 0.1);
+  border-top: 1px solid var(--border-color);
+  color: var(--color-short);
+  font-size: 11px;
+  text-align: center;
+}
+
+.loading-text {
+  color: var(--text-muted);
+  animation: pulse 1.5s infinite;
+}
+
+.chain-cell {
+  width: 60px;
+}
+
+.chain-dot-small {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+}
+
+.chain-assign {
+  display: flex;
+  gap: 4px;
+}
+
+.chain-dot-tiny {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.15s ease;
+}
+
+.chain-dot-tiny:hover {
+  opacity: 1;
+}
+
+/* Order Entry Panel */
+.order-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 300px;
+}
+
+.order-symbol {
+  font-size: 24px;
+  font-weight: 700;
+  text-align: center;
+  padding: 8px;
+  background: var(--bg-secondary);
+  border-radius: 4px;
+}
+
+.order-symbol-input {
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 24px;
+  font-weight: 700;
+  text-align: center;
+  width: 100%;
+  text-transform: uppercase;
+  font-family: inherit;
+  outline: none;
+}
+
+.order-symbol-input:focus {
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+}
+
+.order-symbol-input::placeholder {
+  color: var(--text-muted);
+}
+
+.side-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.side-btn {
+  flex: 1;
+  padding: 12px;
+  border: 2px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+}
+
+.side-btn.buy:hover,
+.side-btn.buy.active {
+  background: var(--color-long);
+  border-color: var(--color-long);
+  color: #000;
+}
+
+.side-btn.sell:hover,
+.side-btn.sell.active {
+  background: var(--color-short);
+  border-color: var(--color-short);
+  color: #fff;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-row label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.form-row .input {
+  width: 100%;
+}
+
+.submit-btn {
+  padding: 12px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.submit-btn.buy {
+  background: var(--color-long);
+  color: #000;
+}
+
+.submit-btn.sell {
+  background: var(--color-short);
+  color: #fff;
+}
+
+.submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.order-message {
+  padding: 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  text-align: center;
+}
+
+.order-message.success {
+  background: rgba(46, 204, 113, 0.2);
+  color: var(--color-long);
+}
+
+.order-message.error {
+  background: rgba(231, 76, 60, 0.2);
+  color: var(--color-short);
+}
+
+/* Orders Panel */
+.btn-small {
+  padding: 3px 8px;
+  font-size: 10px;
+}
+
+.btn-tiny {
+  padding: 2px 6px;
+  font-size: 10px;
+}
+
+.status-badge {
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.status-badge.pending {
+  background: var(--color-neutral);
+  color: #000;
+}
+
+.status-badge.partial {
+  background: var(--color-info);
+  color: #fff;
+}
+
+.status-badge.filled,
+.status-badge.order_fill_received {
+  background: var(--color-long);
+  color: #000;
+}
+
+.status-badge.cancelled,
+.status-badge.rejected {
+  background: var(--color-short);
+  color: #fff;
+}
+
+.empty-message {
+  text-align: center;
+  padding: 24px;
+  color: var(--text-muted);
+}
+
+/* Positions Panel */
+.pnl-total {
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.pnl-total.positive {
+  color: var(--color-long);
+}
+
+.pnl-total.negative {
+  color: var(--color-short);
+}
+
+/* Event Stream Panel */
+.event-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.input-small {
+  padding: 2px 6px;
+  font-size: 10px;
+}
+
+.autoscroll-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.event-stream {
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 11px;
+  padding: 0 !important;
+}
+
+.event-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.event-row:hover {
+  background: var(--bg-secondary);
+}
+
+.event-time {
+  color: var(--text-muted);
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+.event-badge {
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 600;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.event-type {
+  color: var(--text-primary);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.event-symbol {
+  color: var(--color-info);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.event-payload {
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+/* Decision Panel */
+.decision-panel {
+  padding: 0 !important;
+}
+
+.decision-chain {
+  display: flex;
+  flex-direction: column;
+}
+
+.decision-stage {
+  padding: 12px;
+  border-bottom: 1px solid var(--border-color);
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
+}
+
+.decision-stage.active {
+  opacity: 1;
+}
+
+.stage-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.stage-icon {
+  font-size: 16px;
+}
+
+.stage-name {
+  font-weight: 600;
+  font-size: 12px;
+  flex: 1;
+}
+
+.stage-time {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: monospace;
+}
+
+.stage-content {
+  padding-left: 24px;
+}
+
+.stage-content.pending {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.direction-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.direction-badge.long {
+  background: var(--color-long);
+  color: #000;
+}
+
+.direction-badge.short {
+  background: var(--color-short);
+  color: #fff;
+}
+
+.direction-badge.none {
+  background: var(--color-neutral);
+  color: #000;
+}
+
+.decision-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.decision-badge.approved {
+  background: var(--color-long);
+  color: #000;
+}
+
+.decision-badge.rejected,
+.decision-badge.vetoed {
+  background: var(--color-short);
+  color: #fff;
+}
+
+.decision-badge.pending {
+  background: var(--color-neutral);
+  color: #000;
+}
+
+.confidence-bar {
+  position: relative;
+  height: 20px;
+  background: var(--bg-secondary);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.confidence-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-short), var(--color-neutral), var(--color-long));
+  transition: width 0.3s ease;
+}
+
+.confidence-value {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-weight: 700;
+  font-size: 11px;
+  color: var(--text-primary);
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+}
+
+.stage-detail {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.stage-reasons {
+  margin-top: 8px;
+}
+
+.reason {
+  font-size: 10px;
+  color: var(--text-muted);
+  padding: 2px 0;
+}
+
+.reason::before {
+  content: '• ';
+  color: var(--color-short);
+}
+
+/* Table utilities */
+.text-right {
+  text-align: right;
+}
+
+/* Trading Controls Panel */
+.trading-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.control-section {
+  padding: 12px;
+  background: var(--bg-secondary);
+  border-radius: 4px;
+}
+
+.section-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  letter-spacing: 0.5px;
+}
+
+.mode-display {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.trading-mode-large {
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.trading-mode-large.paper {
+  background: var(--color-info);
+  color: #fff;
+}
+
+.trading-mode-large.live {
+  background: var(--color-neutral);
+  color: #000;
+}
+
+.armed-badge {
+  padding: 4px 8px;
+  background: var(--color-short);
+  color: #fff;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  animation: pulse-danger 1s infinite;
+}
+
+.live-controls {
+  margin-top: 12px;
+}
+
+.arm-dialog {
+  padding: 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--color-short);
+  border-radius: 4px;
+}
+
+.warning-text {
+  color: var(--color-short);
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.arm-input {
+  width: 100%;
+  text-align: center;
+  font-weight: 700;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+
+.arm-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-danger {
+  background: var(--color-short);
+  border-color: var(--color-short);
+  color: #fff;
+}
+
+.btn-danger:hover {
+  background: #ff6b7a;
+}
+
+.btn-kill-switch {
+  width: 100%;
+  padding: 12px;
+  background: var(--color-short);
+  border-color: var(--color-short);
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.btn-kill-switch:hover {
+  background: #ff6b7a;
+}
+
+.kill-switch-active-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.kill-switch-status {
+  padding: 8px 16px;
+  background: var(--color-short);
+  color: #fff;
+  border-radius: 4px;
+  font-weight: 700;
+  animation: blink 0.5s infinite;
+}
+
+.profile-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profile-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.profile-row label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  flex: 1;
+}
+
+.profile-row .input {
+  width: 120px;
+}
+
+.control-message {
+  padding: 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  text-align: center;
+}
+
+.control-message.success {
+  background: rgba(46, 204, 113, 0.2);
+  color: var(--color-long);
+}
+
+.control-message.error {
+  background: rgba(231, 76, 60, 0.2);
+  color: var(--color-short);
+}
+
+/* Order message pending state */
+.order-message.pending {
+  background: rgba(255, 165, 2, 0.2);
+  color: var(--color-neutral);
+}
+
+/* Chart Panel */
+.chart-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-panel .morpheus-panel-content {
+  padding: 0;
+}
+
+.chart-container {
+  flex: 1;
+  position: relative;
+  min-height: 200px;
+}
+
+.chart-placeholder-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-panel);
+  z-index: 10;
+}
+
+.chart-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.signal-badge {
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.signal-badge.long {
+  background: var(--color-long);
+  color: #000;
+}
+
+.signal-badge.short {
+  background: var(--color-short);
+  color: #fff;
+}
+
+.signal-badge.none {
+  background: var(--text-muted);
+  color: #fff;
+}
+
+.score-badge {
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--color-info);
+  color: #fff;
+}
+
+.regime-badge {
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+/* Decision Support Panel */
+.decision-support-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.decision-support-panel .morpheus-panel-content {
+  padding: 0;
+}
+
+.decision-support-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.ds-section {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.ds-section:last-child {
+  border-bottom: none;
+}
+
+.ds-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.ds-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ds-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.ds-symbol {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+/* Signal Status Colors */
+.ds-signal-status.armed {
+  color: var(--color-long);
+}
+
+.ds-signal-status.expiring {
+  color: var(--color-neutral);
+}
+
+.ds-signal-status.stale {
+  color: var(--color-short);
+}
+
+.ds-signal-status.none {
+  color: var(--text-muted);
+}
+
+.ds-age.armed {
+  color: var(--color-long);
+}
+
+.ds-age.expiring {
+  color: var(--color-neutral);
+  animation: pulse-warning 1s infinite;
+}
+
+.ds-age.stale {
+  color: var(--color-short);
+}
+
+/* Direction Colors */
+.ds-direction.long {
+  color: var(--color-long);
+}
+
+.ds-direction.short {
+  color: var(--color-short);
+}
+
+/* Price Styling */
+.ds-price {
+  font-family: 'Consolas', 'Monaco', monospace;
+}
+
+.ds-stop {
+  color: var(--color-short);
+}
+
+.ds-target {
+  color: var(--color-long);
+}
+
+/* Execution State */
+.ds-execution-section {
+  background: var(--bg-secondary);
+}
+
+.ds-execution-state {
+  text-align: center;
+  font-size: 24px;
+  font-weight: 700;
+  padding: 12px;
+  border-radius: 4px;
+  letter-spacing: 2px;
+}
+
+.ds-execution-state.ready {
+  background: var(--color-long);
+  color: #000;
+  animation: pulse-ready 2s infinite;
+}
+
+.ds-execution-state.blocked {
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+}
+
+@keyframes pulse-ready {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes pulse-warning {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.ds-block-reasons {
+  margin-top: 8px;
+}
+
+.ds-block-reason {
+  font-size: 10px;
+  color: var(--color-short);
+  padding: 2px 0;
+}
+
+.ds-block-reason::before {
+  content: '✗ ';
+}
+
+/* Confirm Button */
+.ds-confirm-section {
+  padding: 12px;
+}
+
+.ds-confirm-btn {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ds-confirm-btn.ready {
+  background: var(--color-long);
+  color: #000;
+}
+
+.ds-confirm-btn.ready:hover {
+  background: #00ff7f;
+  transform: scale(1.02);
+}
+
+.ds-confirm-btn.ready:active {
+  transform: scale(0.98);
+}
+
+.ds-confirm-btn.blocked {
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.ds-confirm-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.ds-hotkey-hint {
+  text-align: center;
+  margin-top: 8px;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.ds-hotkey-hint kbd {
+  background: var(--bg-tertiary);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: inherit;
+  margin: 0 2px;
+}
+
+.ds-confirm-result {
+  text-align: center;
+  margin-top: 8px;
+  padding: 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.ds-confirm-result.success {
+  background: rgba(46, 204, 113, 0.2);
+  color: var(--color-long);
+}
+
+.ds-confirm-result.error {
+  background: rgba(231, 76, 60, 0.2);
+  color: var(--color-short);
+}
+
+/* Mode Indicator in Header */
+.mode-indicator {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+
+.mode-indicator.paper {
+  background: var(--color-info);
+  color: #fff;
+}
+
+.mode-indicator.live {
+  background: var(--color-neutral);
+  color: #000;
+}
+
+.armed-indicator {
+  margin-left: 6px;
+  padding: 2px 6px;
+  background: var(--color-short);
+  color: #fff;
+  border-radius: 3px;
+  animation: blink 0.5s infinite;
+}
+
+/* Confirm Window Countdown */
+.ds-countdown-section {
+  background: var(--bg-tertiary);
+  text-align: center;
+  padding: 12px !important;
+}
+
+.ds-countdown-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.ds-countdown-value {
+  font-size: 32px;
+  font-weight: 700;
+  font-family: 'Consolas', 'Monaco', monospace;
+  letter-spacing: 2px;
+}
+
+.ds-countdown-value.countdown-green {
+  color: var(--color-long);
+}
+
+.ds-countdown-value.countdown-yellow {
+  color: var(--color-neutral);
+  animation: pulse-warning 0.5s infinite;
+}
+
+.ds-countdown-value.countdown-red {
+  color: var(--color-short);
+  animation: blink 0.3s infinite;
+}
+
+.ds-countdown-value.countdown-expired {
+  color: var(--text-muted);
+}
