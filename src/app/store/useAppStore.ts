@@ -251,6 +251,10 @@ export interface AppState {
   addPendingCommand: (command: PendingCommand) => void;
   removePendingCommand: (commandId: string) => void;
 
+  // Actions - Direct data loading (from API)
+  loadOrders: (orders: Record<string, Order>) => void;
+  loadPositions: (positions: Record<string, Position>) => void;
+
   // Actions - State reset (for reconnect)
   resetTradingState: () => void;
   loadInitialState: (state: Record<string, unknown>) => void;
@@ -302,7 +306,21 @@ export const useAppStore = create<AppState>((set, get) => ({
   positions: {},
   executions: [],
   quotes: {},
-  watchlist: [],  // Centralized watchlist - empty by default
+  watchlist: (() => {
+    // Load watchlist from localStorage on init
+    try {
+      const saved = localStorage.getItem('morpheus-watchlist');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to load watchlist from localStorage:', e);
+    }
+    return [];
+  })(),
 
   pendingCommands: {},
 
@@ -622,25 +640,45 @@ export const useAppStore = create<AppState>((set, get) => ({
     });
   },
 
-  // Centralized watchlist actions
+  // Centralized watchlist actions (persisted to localStorage)
   addToWatchlist: (symbol) => {
     const upperSymbol = symbol.toUpperCase();
     set((state) => {
       if (state.watchlist.includes(upperSymbol)) {
         return state; // Already in watchlist
       }
-      return { watchlist: [...state.watchlist, upperSymbol] };
+      const newWatchlist = [...state.watchlist, upperSymbol];
+      // Persist to localStorage
+      try {
+        localStorage.setItem('morpheus-watchlist', JSON.stringify(newWatchlist));
+      } catch (e) {
+        console.warn('Failed to save watchlist:', e);
+      }
+      return { watchlist: newWatchlist };
     });
   },
 
   removeFromWatchlist: (symbol) => {
     const upperSymbol = symbol.toUpperCase();
-    set((state) => ({
-      watchlist: state.watchlist.filter((s) => s !== upperSymbol),
-    }));
+    set((state) => {
+      const newWatchlist = state.watchlist.filter((s) => s !== upperSymbol);
+      // Persist to localStorage
+      try {
+        localStorage.setItem('morpheus-watchlist', JSON.stringify(newWatchlist));
+      } catch (e) {
+        console.warn('Failed to save watchlist:', e);
+      }
+      return { watchlist: newWatchlist };
+    });
   },
 
   clearWatchlist: () => {
+    // Persist to localStorage
+    try {
+      localStorage.setItem('morpheus-watchlist', JSON.stringify([]));
+    } catch (e) {
+      console.warn('Failed to save watchlist:', e);
+    }
     set({ watchlist: [] });
   },
 
@@ -663,6 +701,15 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   // State reset for reconnect
+  // Direct data loading from API
+  loadOrders: (orders) => {
+    set({ orders });
+  },
+
+  loadPositions: (positions) => {
+    set({ positions });
+  },
+
   resetTradingState: () => {
     set({
       orders: {},

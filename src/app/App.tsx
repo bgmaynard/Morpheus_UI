@@ -10,6 +10,7 @@ import { GoldenLayout, LayoutConfig, ComponentContainer } from 'golden-layout';
 import { useAppStore, setGoldenLayout } from './store/useAppStore';
 import { createWSClient, MorpheusWSClient } from './morpheus/wsClient';
 import { MorpheusEvent } from './morpheus/eventTypes';
+import { getAPIClient } from './morpheus/apiClient';
 
 // Panel imports
 import {
@@ -310,6 +311,42 @@ export function App() {
       wsClientRef.current?.disconnect();
     };
   }, [handleEvent, setConnectionStatus]);
+
+  // Sync watchlist with server when connection is established
+  const connectionStatus = useAppStore((s) => s.connection.websocket);
+  const watchlist = useAppStore((s) => s.watchlist);
+  const syncedRef = useRef(false);
+
+  useEffect(() => {
+    // Only sync once when first connected (or reconnected)
+    if (connectionStatus !== 'connected') {
+      syncedRef.current = false;
+      return;
+    }
+
+    // Sync watchlist to server
+    const syncWatchlist = async () => {
+      if (watchlist.length === 0) return;
+
+      console.log(`[APP] Syncing ${watchlist.length} watchlist symbols to server...`);
+      const client = getAPIClient();
+
+      for (const symbol of watchlist) {
+        try {
+          await client.subscribeSymbol(symbol);
+          console.log(`[APP] Subscribed: ${symbol}`);
+        } catch (err) {
+          console.error(`[APP] Failed to subscribe ${symbol}:`, err);
+        }
+      }
+      console.log(`[APP] Watchlist sync complete`);
+    };
+
+    if (!syncedRef.current) {
+      syncedRef.current = true;
+      syncWatchlist();
+    }
+  }, [connectionStatus, watchlist]);
 
   // Initialize GoldenLayout
   useEffect(() => {

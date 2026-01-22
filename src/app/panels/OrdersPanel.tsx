@@ -98,6 +98,9 @@ export function OrdersPanel({ container: _container }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Load orders directly into store
+  const loadOrders = useAppStore((s) => s.loadOrders);
+
   // Fetch orders on mount
   useEffect(() => {
     const fetchOrders = async () => {
@@ -107,10 +110,9 @@ export function OrdersPanel({ container: _container }: Props) {
         const client = getAPIClient();
         const response = await client.getOrders();
 
-        // Update store with fetched orders
-        const store = useAppStore.getState();
+        // Map API orders to store Order format
+        const ordersMap: Record<string, Order> = {};
         for (const order of response.orders) {
-          // Map API order to store Order format
           const storeOrder: Order = {
             client_order_id: order.order_id,
             symbol: order.symbol,
@@ -123,25 +125,12 @@ export function OrdersPanel({ container: _container }: Props) {
             status: mapSchwabStatus(order.status),
             timestamp: order.entered_time,
           };
-
-          // Directly update orders in store
-          store.processOrderEvent({
-            event_id: `init-${order.order_id}`,
-            event_type: storeOrder.status === 'filled' ? 'ORDER_FILL_RECEIVED' : 'ORDER_CONFIRMED',
-            timestamp: order.entered_time,
-            symbol: order.symbol,
-            payload: {
-              client_order_id: order.order_id,
-              symbol: order.symbol,
-              side: order.side.toLowerCase(),
-              quantity: order.quantity,
-              filled_quantity: order.filled_quantity,
-              order_type: order.order_type,
-              limit_price: order.limit_price,
-              status: order.status,
-            },
-          });
+          ordersMap[order.order_id] = storeOrder;
         }
+
+        // Load all orders at once
+        loadOrders(ordersMap);
+        console.log(`[ORDERS] Loaded ${response.orders.length} orders from Schwab`);
       } catch (err) {
         console.error('Failed to fetch orders:', err);
         setError('Trading data unavailable');
@@ -151,7 +140,7 @@ export function OrdersPanel({ container: _container }: Props) {
     };
 
     fetchOrders();
-  }, []);
+  }, [loadOrders]);
 
   const filteredOrders = useMemo(
     () => filterOrders(allOrders, activeTab),

@@ -44,19 +44,35 @@ export function WatchlistPanel({ container }: Props) {
     checkMarketData();
   }, []);
 
-  // Subscribe to symbols when watchlist changes
+  // Get connection status to resubscribe when reconnected
+  const connectionStatus = useAppStore((s) => s.connection.websocket);
+
+  // Subscribe to all watchlist symbols on load and when watchlist/connection changes
   useEffect(() => {
+    // Only subscribe if we have a connection
+    if (connectionStatus !== 'connected' && connectionStatus !== 'connecting') {
+      return;
+    }
+
     const client = getAPIClient();
 
     // Subscribe all watchlist symbols
-    watchlist.forEach(async (symbol) => {
-      try {
-        await client.subscribeSymbol(symbol);
-      } catch (err) {
-        console.error(`Failed to subscribe to ${symbol}:`, err);
+    const subscribeAll = async () => {
+      for (const symbol of watchlist) {
+        try {
+          await client.subscribeSymbol(symbol);
+          console.log(`[WATCHLIST] Subscribed to ${symbol}`);
+        } catch (err) {
+          console.error(`Failed to subscribe to ${symbol}:`, err);
+        }
       }
-    });
-  }, [watchlist]);
+    };
+
+    if (watchlist.length > 0) {
+      console.log(`[WATCHLIST] Syncing ${watchlist.length} symbols with server...`);
+      subscribeAll();
+    }
+  }, [watchlist, connectionStatus]);
 
   const handleSymbolClick = (symbol: string) => {
     setSelectedSymbol(symbol);
