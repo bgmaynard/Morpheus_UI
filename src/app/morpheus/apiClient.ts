@@ -22,6 +22,8 @@ const DEFAULT_CONFIG: APIConfig = {
 // Command types
 export type CommandType =
   | 'SET_SYMBOL_CHAIN'
+  | 'SUBSCRIBE_SYMBOL'
+  | 'UNSUBSCRIBE_SYMBOL'
   | 'SUBMIT_MANUAL_ORDER'
   | 'CANCEL_ORDER'
   | 'CANCEL_ALL'
@@ -231,6 +233,16 @@ export class MorpheusAPIClient {
     return this.sendCommand('CONFIRM_ENTRY', payload);
   }
 
+  // Subscribe to live quote updates for a symbol
+  async subscribeSymbol(symbol: string): Promise<CommandResult> {
+    return this.sendCommand('SUBSCRIBE_SYMBOL', { symbol: symbol.toUpperCase() });
+  }
+
+  // Unsubscribe from live quote updates
+  async unsubscribeSymbol(symbol: string): Promise<CommandResult> {
+    return this.sendCommand('UNSUBSCRIBE_SYMBOL', { symbol: symbol.toUpperCase() });
+  }
+
   // ========================================================================
   // Market Data Methods (read-only, no commands)
   // ========================================================================
@@ -256,13 +268,35 @@ export class MorpheusAPIClient {
     periodType: string = 'day',
     period: number = 1,
     frequency: number = 1,
+    frequencyType: string = 'minute',
   ): Promise<CandlesResponse> {
     const params = new URLSearchParams({
       period_type: periodType,
       period: period.toString(),
       frequency: frequency.toString(),
+      frequency_type: frequencyType,
     });
     return this.request(`/api/market/candles/${symbol.toUpperCase()}?${params}`);
+  }
+
+  // ========================================================================
+  // Trading Data Methods (Positions, Orders, Transactions)
+  // ========================================================================
+
+  // Get current account positions
+  async getPositions(): Promise<PositionsResponse> {
+    return this.request('/api/trading/positions');
+  }
+
+  // Get orders (optionally filtered by status)
+  async getOrders(status?: string): Promise<OrdersResponse> {
+    const params = status ? `?status=${status}` : '';
+    return this.request(`/api/trading/orders${params}`);
+  }
+
+  // Get today's transactions/executions
+  async getTransactions(): Promise<TransactionsResponse> {
+    return this.request('/api/trading/transactions');
   }
 }
 
@@ -299,6 +333,56 @@ export interface CandleData {
 export interface CandlesResponse {
   symbol: string;
   candles: CandleData[];
+}
+
+// Trading data types
+export interface PositionData {
+  symbol: string;
+  quantity: number;
+  avg_price: number;
+  current_price: number;
+  market_value: number;
+  unrealized_pnl: number;
+  unrealized_pnl_pct: number;
+  asset_type: string;
+}
+
+export interface PositionsResponse {
+  positions: PositionData[];
+}
+
+export interface OrderData {
+  order_id: string;
+  symbol: string;
+  side: string;
+  quantity: number;
+  filled_quantity: number;
+  order_type: string;
+  limit_price: number | null;
+  stop_price: number | null;
+  status: string;
+  entered_time: string;
+  close_time: string | null;
+}
+
+export interface OrdersResponse {
+  orders: OrderData[];
+}
+
+export interface TransactionData {
+  transaction_id: string;
+  order_id: string;
+  symbol: string;
+  side: string;
+  quantity: number;
+  price: number;
+  timestamp: string;
+  transaction_type: string;
+  description: string;
+}
+
+export interface TransactionsResponse {
+  transactions: TransactionData[];
 }
 
 // Singleton instance

@@ -1,12 +1,14 @@
 /**
  * Positions Panel - Current positions display
  *
- * Shows open positions from event-derived state.
- * P&L calculated from position data.
+ * Shows open positions from Schwab account.
+ * Fetches on mount, then updates via POSITION_UPDATE events.
  */
 
 import { ComponentContainer } from 'golden-layout';
-import { usePositions, useTotalPnL } from '../store/useAppStore';
+import { useEffect, useState } from 'react';
+import { usePositions, useTotalPnL, useAppStore } from '../store/useAppStore';
+import { getAPIClient } from '../morpheus/apiClient';
 import './panels.css';
 
 interface Props {
@@ -17,6 +19,43 @@ export function PositionsPanel({ container }: Props) {
   const positions = usePositions();
   const totalPnL = useTotalPnL();
   const positionList = Object.values(positions);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch positions on mount
+  useEffect(() => {
+    const fetchPositions = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const client = getAPIClient();
+        console.log('[POSITIONS] Fetching positions...');
+        const response = await client.getPositions();
+        console.log('[POSITIONS] API response:', response);
+
+        // Update store with fetched positions
+        const store = useAppStore.getState();
+        for (const pos of response.positions) {
+          console.log('[POSITIONS] Processing position:', pos);
+          store.processPositionEvent({
+            event_id: `init-${pos.symbol}`,
+            event_type: 'POSITION_UPDATE',
+            timestamp: new Date().toISOString(),
+            symbol: pos.symbol,
+            payload: pos,
+          });
+        }
+        console.log('[POSITIONS] Store positions after update:', useAppStore.getState().positions);
+      } catch (err) {
+        console.error('[POSITIONS] Failed to fetch positions:', err);
+        setError('Trading data unavailable');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPositions();
+  }, []);
 
   return (
     <div className="morpheus-panel">
@@ -39,7 +78,19 @@ export function PositionsPanel({ container }: Props) {
             </tr>
           </thead>
           <tbody>
-            {positionList.length === 0 ? (
+            {isLoading ? (
+              <tr>
+                <td colSpan={6} className="empty-message">
+                  Loading positions...
+                </td>
+              </tr>
+            ) : error ? (
+              <tr>
+                <td colSpan={6} className="empty-message">
+                  {error}
+                </td>
+              </tr>
+            ) : positionList.length === 0 ? (
               <tr>
                 <td colSpan={6} className="empty-message">
                   No open positions

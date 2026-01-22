@@ -9,6 +9,8 @@
 export type EventType =
   // Market Data
   | 'MARKET_SNAPSHOT'
+  | 'QUOTE_UPDATE'
+  | 'CANDLE_UPDATE'
   // Features & Regime
   | 'FEATURES_COMPUTED'
   | 'REGIME_DETECTED'
@@ -124,6 +126,8 @@ export interface DecisionChain {
 // Event category for filtering/display
 export const EVENT_CATEGORIES: Record<EventType, string> = {
   MARKET_SNAPSHOT: 'Market',
+  QUOTE_UPDATE: 'Market',
+  CANDLE_UPDATE: 'Market',
   FEATURES_COMPUTED: 'Features',
   REGIME_DETECTED: 'Regime',
   SIGNAL_CANDIDATE: 'Signal',

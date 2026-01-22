@@ -159,6 +159,18 @@ export interface Execution {
   timestamp: string;
 }
 
+// Live quote data from streaming
+export interface Quote {
+  symbol: string;
+  bid: number;
+  ask: number;
+  last: number;
+  volume: number;
+  timestamp: string;
+  is_tradeable: boolean;
+  is_market_open: boolean;
+}
+
 // Pending command tracking (for UI feedback)
 export interface PendingCommand {
   command_id: string;
@@ -193,6 +205,12 @@ export interface AppState {
   positions: Record<string, Position>;  // keyed by symbol
   executions: Execution[];
 
+  // Live quote data (from QUOTE_UPDATE events)
+  quotes: Record<string, Quote>;  // keyed by symbol
+
+  // Centralized watchlist - single source of truth for all panels
+  watchlist: string[];
+
   // Pending commands (for UI feedback)
   pendingCommands: Record<string, PendingCommand>;
 
@@ -222,6 +240,12 @@ export interface AppState {
   processExecutionEvent: (event: MorpheusEvent) => void;
   processPositionEvent: (event: MorpheusEvent) => void;
   processSystemEvent: (event: MorpheusEvent) => void;
+  processQuoteEvent: (event: MorpheusEvent) => void;
+
+  // Actions - Centralized watchlist management
+  addToWatchlist: (symbol: string) => void;
+  removeFromWatchlist: (symbol: string) => void;
+  clearWatchlist: () => void;
 
   // Actions - Pending commands
   addPendingCommand: (command: PendingCommand) => void;
@@ -277,6 +301,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   orders: {},
   positions: {},
   executions: [],
+  quotes: {},
+  watchlist: [],  // Centralized watchlist - empty by default
 
   pendingCommands: {},
 
@@ -564,6 +590,60 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
+  // Process live quote updates from QUOTE_UPDATE events
+  processQuoteEvent: (event) => {
+    const payload = event.payload as Record<string, unknown>;
+    const symbol = (event.symbol || payload.symbol as string)?.toUpperCase();
+
+    if (!symbol) return;
+
+    set((state) => {
+      // Get existing quote to merge with (preserve good values)
+      const existingQuote = state.quotes[symbol] || {};
+
+      // Only update fields that have actual values (not null/undefined)
+      const quote: Quote = {
+        symbol,
+        bid: (payload.bid as number) ?? existingQuote.bid,
+        ask: (payload.ask as number) ?? existingQuote.ask,
+        last: (payload.last as number) ?? existingQuote.last,
+        volume: (payload.volume as number) ?? existingQuote.volume,
+        timestamp: (payload.timestamp as string) || event.timestamp || existingQuote.timestamp,
+        is_tradeable: (payload.is_tradeable as boolean) ?? existingQuote.is_tradeable,
+        is_market_open: (payload.is_market_open as boolean) ?? existingQuote.is_market_open,
+      };
+
+      return {
+        quotes: {
+          ...state.quotes,
+          [symbol]: quote,
+        },
+      };
+    });
+  },
+
+  // Centralized watchlist actions
+  addToWatchlist: (symbol) => {
+    const upperSymbol = symbol.toUpperCase();
+    set((state) => {
+      if (state.watchlist.includes(upperSymbol)) {
+        return state; // Already in watchlist
+      }
+      return { watchlist: [...state.watchlist, upperSymbol] };
+    });
+  },
+
+  removeFromWatchlist: (symbol) => {
+    const upperSymbol = symbol.toUpperCase();
+    set((state) => ({
+      watchlist: state.watchlist.filter((s) => s !== upperSymbol),
+    }));
+  },
+
+  clearWatchlist: () => {
+    set({ watchlist: [] });
+  },
+
   // Pending command actions
   addPendingCommand: (command) => {
     set((state) => ({
@@ -692,4 +772,26 @@ export const useHasPendingCommand = (commandType?: string) => {
   const pending = useAppStore((s) => s.pendingCommands);
   if (!commandType) return Object.keys(pending).length > 0;
   return Object.values(pending).some((c) => c.command_type === commandType);
+};
+
+// Quote selectors (live streaming data)
+export const useQuotes = () => {
+  return useAppStore((s) => s.quotes);
+};
+
+export const useQuote = (symbol: string) => {
+  const quotes = useAppStore((s) => s.quotes);
+  return quotes[symbol?.toUpperCase()];
+};
+
+// Centralized watchlist selectors
+export const useWatchlist = () => {
+  return useAppStore((s) => s.watchlist);
+};
+
+export const useWatchlistActions = () => {
+  const addToWatchlist = useAppStore((s) => s.addToWatchlist);
+  const removeFromWatchlist = useAppStore((s) => s.removeFromWatchlist);
+  const clearWatchlist = useAppStore((s) => s.clearWatchlist);
+  return { addToWatchlist, removeFromWatchlist, clearWatchlist };
 };

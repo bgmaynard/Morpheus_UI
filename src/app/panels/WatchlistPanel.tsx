@@ -1,32 +1,19 @@
 /**
- * Watchlist Panel - Symbol watchlist with chain dots
+ * Watchlist Panel - Centralized symbol watchlist
  *
- * Shows list of watched symbols with quick chain assignment.
- * Fetches REAL quote data from Morpheus API (Schwab).
- * Supports add/remove symbols dynamically.
+ * Uses the store's centralized watchlist and quotes.
+ * All panels work from this single source of truth.
  */
 
 import { ComponentContainer } from 'golden-layout';
-import { useAppStore, CHAIN_COLORS } from '../store/useAppStore';
+import { useAppStore, useWatchlist, useWatchlistActions, useQuotes, CHAIN_COLORS } from '../store/useAppStore';
 import { useState, useCallback, useEffect, KeyboardEvent } from 'react';
-import { getAPIClient, QuoteResponse } from '../morpheus/apiClient';
+import { getAPIClient } from '../morpheus/apiClient';
 import './panels.css';
 
 interface Props {
   container: ComponentContainer;
 }
-
-interface WatchlistItem {
-  symbol: string;
-  last: number;
-  change: number;
-  changePct: number;
-  volume: number;
-  isLoading: boolean;
-}
-
-// Initial watchlist symbols (no fake prices - will fetch from API)
-const INITIAL_SYMBOLS = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA', 'SPY'];
 
 export function WatchlistPanel({ container }: Props) {
   const chains = useAppStore((s) => s.chains);
@@ -34,96 +21,46 @@ export function WatchlistPanel({ container }: Props) {
   const setActiveChain = useAppStore((s) => s.setActiveChain);
   const activeChainId = useAppStore((s) => s.activeChainId);
 
-  const [watchlist, setWatchlist] = useState<WatchlistItem[]>(() =>
-    INITIAL_SYMBOLS.map((symbol) => ({
-      symbol,
-      last: 0,
-      change: 0,
-      changePct: 0,
-      volume: 0,
-      isLoading: true,
-    }))
-  );
+  // Centralized watchlist from store
+  const watchlist = useWatchlist();
+  const { addToWatchlist, removeFromWatchlist } = useWatchlistActions();
+  const quotes = useQuotes();
+
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
   const [newSymbolInput, setNewSymbolInput] = useState('');
   const [marketDataAvailable, setMarketDataAvailable] = useState<boolean | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Fetch quotes for given symbols
-  const fetchQuotesForSymbols = useCallback(async (symbols: string[]) => {
-    if (symbols.length === 0) return;
-
-    setIsRefreshing(true);
-
-    try {
-      const client = getAPIClient();
-      const response = await client.getQuotes(symbols);
-
-      setWatchlist((prev) =>
-        prev.map((item) => {
-          const quote = response.quotes[item.symbol];
-          if (quote) {
-            return {
-              ...item,
-              last: quote.last,
-              volume: quote.volume,
-              isLoading: false,
-            };
-          }
-          return { ...item, isLoading: false };
-        })
-      );
-    } catch (err) {
-      console.error('Failed to fetch quotes:', err);
-      setWatchlist((prev) =>
-        prev.map((item) => ({ ...item, isLoading: false }))
-      );
-    } finally {
-      setIsRefreshing(false);
-    }
-  }, []);
-
-  // Check market data status and fetch quotes on mount
+  // Check market data status on mount
   useEffect(() => {
-    let mounted = true;
-
-    const initializeData = async () => {
+    const checkMarketData = async () => {
       try {
         const client = getAPIClient();
         const status = await client.getMarketStatus();
-
-        if (!mounted) return;
-
         setMarketDataAvailable(status.available);
-
-        // If market data is available, fetch quotes immediately
-        if (status.available) {
-          const symbols = INITIAL_SYMBOLS;
-          fetchQuotesForSymbols(symbols);
-        }
       } catch {
-        if (mounted) {
-          setMarketDataAvailable(false);
-        }
+        setMarketDataAvailable(false);
       }
     };
+    checkMarketData();
+  }, []);
 
-    initializeData();
+  // Subscribe to symbols when watchlist changes
+  useEffect(() => {
+    const client = getAPIClient();
 
-    return () => {
-      mounted = false;
-    };
-  }, [fetchQuotesForSymbols]);
-
-  // Fetch all current quotes (for refresh button)
-  const fetchQuotes = useCallback(() => {
-    const symbols = watchlist.map((item) => item.symbol);
-    fetchQuotesForSymbols(symbols);
-  }, [watchlist, fetchQuotesForSymbols]);
+    // Subscribe all watchlist symbols
+    watchlist.forEach(async (symbol) => {
+      try {
+        await client.subscribeSymbol(symbol);
+      } catch (err) {
+        console.error(`Failed to subscribe to ${symbol}:`, err);
+      }
+    });
+  }, [watchlist]);
 
   const handleSymbolClick = (symbol: string) => {
     setSelectedSymbol(symbol);
-    // Also update the active chain's symbol when clicking a row
+    // Update the active chain's symbol when clicking a row
     setChainSymbol(activeChainId, symbol);
   };
 
@@ -147,62 +84,27 @@ export function WatchlistPanel({ container }: Props) {
     if (!symbol) return;
 
     // Check if already in watchlist
-    if (watchlist.some((item) => item.symbol === symbol)) {
+    if (watchlist.includes(symbol)) {
       setNewSymbolInput('');
       return;
     }
 
-    // Add new symbol with loading state
-    const newItem: WatchlistItem = {
-      symbol,
-      last: 0,
-      change: 0,
-      changePct: 0,
-      volume: 0,
-      isLoading: true,
-    };
-
-    setWatchlist((prev) => [...prev, newItem]);
+    // Add to centralized watchlist
+    addToWatchlist(symbol);
     setNewSymbolInput('');
 
     // Also set it as the active chain's symbol
     setChainSymbol(activeChainId, symbol);
 
-    // Try to fetch the quote for the new symbol
-    if (marketDataAvailable) {
-      try {
-        const client = getAPIClient();
-        const quote = await client.getQuote(symbol);
-
-        setWatchlist((prev) =>
-          prev.map((item) =>
-            item.symbol === symbol
-              ? {
-                  ...item,
-                  last: quote.last,
-                  volume: quote.volume,
-                  isLoading: false,
-                }
-              : item
-          )
-        );
-      } catch (err) {
-        console.error(`Failed to fetch quote for ${symbol}:`, err);
-        setWatchlist((prev) =>
-          prev.map((item) =>
-            item.symbol === symbol ? { ...item, isLoading: false } : item
-          )
-        );
-      }
-    } else {
-      // Mark as not loading if market data unavailable
-      setWatchlist((prev) =>
-        prev.map((item) =>
-          item.symbol === symbol ? { ...item, isLoading: false } : item
-        )
-      );
+    // Subscribe to live data
+    try {
+      const client = getAPIClient();
+      await client.subscribeSymbol(symbol);
+      console.log(`[WATCHLIST] Subscribed to ${symbol}`);
+    } catch (err) {
+      console.error('Failed to subscribe:', err);
     }
-  }, [newSymbolInput, watchlist, activeChainId, setChainSymbol, marketDataAvailable]);
+  }, [newSymbolInput, watchlist, activeChainId, setChainSymbol, addToWatchlist]);
 
   // Handle Enter key in add symbol input
   const handleAddSymbolKeyDown = useCallback((e: KeyboardEvent<HTMLInputElement>) => {
@@ -212,22 +114,26 @@ export function WatchlistPanel({ container }: Props) {
   }, [handleAddSymbol]);
 
   // Remove symbol from watchlist
-  const handleRemoveSymbol = useCallback((symbol: string, e: React.MouseEvent) => {
+  const handleRemoveSymbol = useCallback(async (symbol: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setWatchlist((prev) => prev.filter((item) => item.symbol !== symbol));
+
+    // Remove from centralized watchlist
+    removeFromWatchlist(symbol);
 
     // Clear selection if we removed the selected symbol
     if (selectedSymbol === symbol) {
       setSelectedSymbol(null);
     }
-  }, [selectedSymbol]);
 
-  // Refresh quotes from API
-  const handleRefresh = useCallback(() => {
-    if (marketDataAvailable) {
-      fetchQuotes();
+    // Unsubscribe from live data
+    try {
+      const client = getAPIClient();
+      await client.unsubscribeSymbol(symbol);
+      console.log(`[WATCHLIST] Unsubscribed from ${symbol}`);
+    } catch (err) {
+      console.error('Failed to unsubscribe:', err);
     }
-  }, [marketDataAvailable, fetchQuotes]);
+  }, [selectedSymbol, removeFromWatchlist]);
 
   return (
     <div className="morpheus-panel watchlist-panel">
@@ -237,14 +143,7 @@ export function WatchlistPanel({ container }: Props) {
           {marketDataAvailable === false && (
             <span className="market-status-badge offline">Offline</span>
           )}
-          <button
-            className="btn btn-tiny"
-            onClick={handleRefresh}
-            disabled={isRefreshing || !marketDataAvailable}
-            title="Refresh prices"
-          >
-            {isRefreshing ? '...' : 'Refresh'}
-          </button>
+          <span className="watchlist-count">{watchlist.length} symbols</span>
         </div>
       </div>
       <div className="morpheus-panel-content">
@@ -269,43 +168,31 @@ export function WatchlistPanel({ container }: Props) {
             <tr>
               <th>Symbol</th>
               <th className="text-right">Last</th>
-              <th className="text-right">Change</th>
+              <th className="text-right">Bid</th>
+              <th className="text-right">Ask</th>
               <th>Chain</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
-            {watchlist.map((item) => {
-              const chainId = getChainForSymbol(item.symbol);
+            {watchlist.map((symbol) => {
+              const quote = quotes[symbol];
+              const chainId = getChainForSymbol(symbol);
               return (
                 <tr
-                  key={item.symbol}
-                  className={selectedSymbol === item.symbol ? 'selected' : ''}
-                  onClick={() => handleSymbolClick(item.symbol)}
+                  key={symbol}
+                  className={selectedSymbol === symbol ? 'selected' : ''}
+                  onClick={() => handleSymbolClick(symbol)}
                 >
-                  <td className="symbol-cell">{item.symbol}</td>
+                  <td className="symbol-cell">{symbol}</td>
                   <td className="text-right">
-                    {item.isLoading ? (
-                      <span className="loading-text">...</span>
-                    ) : item.last > 0 ? (
-                      item.last.toFixed(2)
-                    ) : (
-                      '--'
-                    )}
+                    {quote?.last ? `$${quote.last.toFixed(2)}` : '--'}
                   </td>
-                  <td
-                    className={`text-right ${item.change >= 0 ? 'text-long' : 'text-short'}`}
-                  >
-                    {item.isLoading ? (
-                      <span className="loading-text">...</span>
-                    ) : item.last > 0 && item.change !== 0 ? (
-                      <>
-                        {item.change >= 0 ? '+' : ''}
-                        {item.change.toFixed(2)} ({item.changePct.toFixed(2)}%)
-                      </>
-                    ) : (
-                      '--'
-                    )}
+                  <td className="text-right">
+                    {quote?.bid ? `$${quote.bid.toFixed(2)}` : '--'}
+                  </td>
+                  <td className="text-right">
+                    {quote?.ask ? `$${quote.ask.toFixed(2)}` : '--'}
                   </td>
                   <td className="chain-cell">
                     {chainId ? (
@@ -322,7 +209,7 @@ export function WatchlistPanel({ container }: Props) {
                             style={{ backgroundColor: CHAIN_COLORS[id] }}
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleChainAssign(id, item.symbol);
+                              handleChainAssign(id, symbol);
                             }}
                             title={`Assign to Chain ${id}`}
                           />
@@ -333,7 +220,7 @@ export function WatchlistPanel({ container }: Props) {
                   <td className="remove-cell">
                     <button
                       className="btn-remove"
-                      onClick={(e) => handleRemoveSymbol(item.symbol, e)}
+                      onClick={(e) => handleRemoveSymbol(symbol, e)}
                       title="Remove from watchlist"
                     >
                       ×
@@ -345,7 +232,7 @@ export function WatchlistPanel({ container }: Props) {
           </tbody>
         </table>
         {watchlist.length === 0 && (
-          <div className="empty-message">No symbols in watchlist</div>
+          <div className="empty-message">No symbols in watchlist. Add symbols above.</div>
         )}
         {marketDataAvailable === false && watchlist.length > 0 && (
           <div className="market-data-warning">

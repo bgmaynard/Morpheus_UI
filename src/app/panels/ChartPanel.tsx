@@ -27,7 +27,7 @@ import {
   SeriesMarker,
   IPriceLine,
 } from 'lightweight-charts';
-import { useActiveChain, useAppStore, useDecisionChain, Timeframe, CHAIN_COLORS } from '../store/useAppStore';
+import { useActiveChain, useAppStore, useDecisionChain, useQuote, useWatchlistActions, Timeframe, CHAIN_COLORS } from '../store/useAppStore';
 
 const TIMEFRAMES: Timeframe[] = ['10s', '1m', '5m', '1D'];
 import { getAPIClient, CandleData } from '../morpheus/apiClient';
@@ -73,17 +73,19 @@ function getTimeFormatter(timeframe: Timeframe): (time: number) => string {
 }
 
 // API parameters based on timeframe
-function getAPIParams(timeframe: Timeframe): { periodType: string; period: number; frequency: number } {
+// Schwab API: periodType is the lookback (day/month/year), frequencyType is bar size (minute/daily)
+function getAPIParams(timeframe: Timeframe): { periodType: string; period: number; frequency: number; frequencyType: string } {
   switch (timeframe) {
     case '10s':
-      return { periodType: 'minute', period: 1, frequency: 1 };
+      // 10s not supported by Schwab, fall back to 1m
+      return { periodType: 'day', period: 1, frequency: 1, frequencyType: 'minute' };
     case '1m':
-      return { periodType: 'minute', period: 1, frequency: 1 };
+      return { periodType: 'day', period: 1, frequency: 1, frequencyType: 'minute' };
     case '5m':
-      return { periodType: 'minute', period: 5, frequency: 1 };
+      return { periodType: 'day', period: 5, frequency: 5, frequencyType: 'minute' };
     case '1D':
     default:
-      return { periodType: 'day', period: 1, frequency: 1 };
+      return { periodType: 'month', period: 6, frequency: 1, frequencyType: 'daily' };
   }
 }
 
@@ -116,6 +118,8 @@ export function ChartPanel({ container }: Props) {
   const activeChainId = useAppStore((s) => s.activeChainId);
   const setChainSymbol = useAppStore((s) => s.setChainSymbol);
   const decisionChain = useDecisionChain(activeChain.symbol);
+  const liveQuote = useQuote(activeChain.symbol);
+  const { addToWatchlist } = useWatchlistActions();
 
   // Symbol input state
   const [symbolInput, setSymbolInput] = useState(activeChain.symbol || '');
@@ -222,15 +226,36 @@ export function ChartPanel({ container }: Props) {
     });
   }, [priceHeight, volumeHeight]);
 
-  // Handle Enter key to update chain symbol
-  const handleSymbolKeyDown = useCallback((e: KeyboardEvent<HTMLInputElement>) => {
+  // Handle Enter key to update chain symbol and add to centralized watchlist
+  const handleSymbolKeyDown = useCallback(async (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       const newSymbol = symbolInput.trim().toUpperCase();
       if (newSymbol && newSymbol !== activeChain.symbol) {
         setChainSymbol(activeChainId, newSymbol);
+        // Add to centralized watchlist (which handles subscription)
+        addToWatchlist(newSymbol);
+        // Also subscribe directly in case it's not in watchlist yet
+        try {
+          const client = getAPIClient();
+          await client.subscribeSymbol(newSymbol);
+          console.log(`[DATA] Subscribed to ${newSymbol} for live quotes`);
+        } catch (err) {
+          console.error('Failed to subscribe to symbol:', err);
+        }
       }
     }
-  }, [symbolInput, activeChain.symbol, activeChainId, setChainSymbol]);
+  }, [symbolInput, activeChain.symbol, activeChainId, setChainSymbol, addToWatchlist]);
+
+  // Update lastPrice from live quote data (takes precedence over candle data)
+  useEffect(() => {
+    if (liveQuote?.last) {
+      console.log(`[CHART] Live quote update: ${activeChain.symbol} $${liveQuote.last.toFixed(2)}`);
+      setLastPrice(liveQuote.last);
+    }
+  }, [liveQuote?.last, activeChain.symbol]);
+
+  // Note: Subscriptions are managed by the centralized WatchlistPanel
+  // Chart adds to watchlist when typing a new symbol, then reads from store quotes
 
   // Check market data availability on mount
   useEffect(() => {
@@ -477,8 +502,8 @@ export function ChartPanel({ container }: Props) {
 
       try {
         const client = getAPIClient();
-        const { periodType, period, frequency } = getAPIParams(localTimeframe);
-        const response = await client.getCandles(activeChain.symbol, periodType, period, frequency);
+        const { periodType, period, frequency, frequencyType } = getAPIParams(localTimeframe);
+        const response = await client.getCandles(activeChain.symbol, periodType, period, frequency, frequencyType);
 
         if (response.candles && response.candles.length > 0) {
           candleDataRef.current = response.candles;
@@ -488,9 +513,12 @@ export function ChartPanel({ container }: Props) {
           // Update indicators
           updateIndicators(response.candles);
 
-          // Set last price
+          // Set last price from candle only if no live quote yet
+          // Live quote (from QUOTE_UPDATE events) takes precedence
           const lastCandle = response.candles[response.candles.length - 1];
-          setLastPrice(lastCandle.close);
+          if (!liveQuote?.last) {
+            setLastPrice(lastCandle.close);
+          }
 
           // Fit content
           if (chartRef.current) {
@@ -635,8 +663,9 @@ export function ChartPanel({ container }: Props) {
             placeholder="SYMBOL"
             spellCheck={false}
           />
-          {lastPrice !== null && (
-            <span className="last-price">${lastPrice.toFixed(2)}</span>
+          {/* Always prefer live quote over candle-derived lastPrice */}
+          {(liveQuote?.last ?? lastPrice) !== null && (
+            <span className="last-price">${(liveQuote?.last ?? lastPrice)!.toFixed(2)}</span>
           )}
         </span>
         <div className="chart-timeframe-selector">

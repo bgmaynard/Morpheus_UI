@@ -23,6 +23,7 @@ import {
   MorpheusDecisionPanel,
   TradingControlsPanel,
   DecisionSupportPanel,
+  OrchestratorPanel,
 } from './panels';
 import { ChainBar, StatusBar } from './components';
 import { useGlobalHotkeys } from './hooks/useHotkeys';
@@ -39,7 +40,39 @@ const PANEL_COMPONENTS: Record<string, React.FC<{ container: ComponentContainer 
   morpheusDecision: MorpheusDecisionPanel,
   tradingControls: TradingControlsPanel,
   decisionSupport: DecisionSupportPanel,
+  orchestrator: OrchestratorPanel,
 };
+
+// Sanitize layout config to ensure sizes are strings (GoldenLayout v2 requirement)
+function sanitizeLayoutConfig(config: LayoutConfig): LayoutConfig {
+  const sanitizeContent = (items: unknown[]): unknown[] => {
+    return items.map((item: unknown) => {
+      const obj = item as Record<string, unknown>;
+      const sanitized: Record<string, unknown> = { ...obj };
+
+      // Convert numeric size to string percentage
+      if (typeof sanitized.size === 'number') {
+        sanitized.size = `${sanitized.size}%`;
+      }
+
+      // Recursively sanitize content
+      if (Array.isArray(sanitized.content)) {
+        sanitized.content = sanitizeContent(sanitized.content);
+      }
+
+      return sanitized;
+    });
+  };
+
+  const result = { ...config };
+  if (result.root && Array.isArray((result.root as Record<string, unknown>).content)) {
+    result.root = {
+      ...result.root,
+      content: sanitizeContent((result.root as Record<string, unknown>).content as unknown[]),
+    } as LayoutConfig['root'];
+  }
+  return result;
+}
 
 // Default layout configuration
 // GoldenLayout v2 requires size as string percentages
@@ -96,6 +129,11 @@ const DEFAULT_LAYOUT: LayoutConfig = {
         content: [
           {
             type: 'component',
+            componentType: 'orchestrator',
+            title: 'Orchestrator',
+          },
+          {
+            type: 'component',
             componentType: 'morpheusDecision',
             title: 'Morpheus Decision',
           },
@@ -130,6 +168,7 @@ export function App() {
   const processExecutionEvent = useAppStore((s) => s.processExecutionEvent);
   const processPositionEvent = useAppStore((s) => s.processPositionEvent);
   const processSystemEvent = useAppStore((s) => s.processSystemEvent);
+  const processQuoteEvent = useAppStore((s) => s.processQuoteEvent);
 
   // Handle incoming Morpheus events
   const handleEvent = useCallback(
@@ -154,6 +193,12 @@ export function App() {
       // System events
       if (eventType.startsWith('SYSTEM_') || eventType === 'HEARTBEAT') {
         processSystemEvent(event);
+      }
+
+      // Quote update events (live streaming market data)
+      if (eventType === 'QUOTE_UPDATE') {
+        console.log(`[WS] QUOTE_UPDATE: ${event.symbol} $${(event.payload.last as number)?.toFixed(2)}`);
+        processQuoteEvent(event);
       }
 
       // Update decision chain based on event type
@@ -246,7 +291,7 @@ export function App() {
         }
       }
     },
-    [addEvent, updateDecisionChain, processOrderEvent, processExecutionEvent, processPositionEvent, processSystemEvent]
+    [addEvent, updateDecisionChain, processOrderEvent, processExecutionEvent, processPositionEvent, processSystemEvent, processQuoteEvent]
   );
 
   // Initialize WebSocket connection
@@ -278,7 +323,8 @@ export function App() {
         const parsed = JSON.parse(savedLayout);
         // Validate that it has the required structure
         if (parsed && parsed.root) {
-          layoutConfig = parsed;
+          // Sanitize to ensure sizes are strings (fixes GoldenLayout v2 compatibility)
+          layoutConfig = sanitizeLayoutConfig(parsed);
         }
       }
     } catch (err) {
@@ -309,8 +355,14 @@ export function App() {
       });
     });
 
-    // Load the layout
-    goldenLayout.loadLayout(layoutConfig);
+    // Load the layout with fallback to default on error
+    try {
+      goldenLayout.loadLayout(layoutConfig);
+    } catch (err) {
+      console.error('Failed to load layout, clearing corrupted data and using default:', err);
+      localStorage.removeItem('morpheus-layout');
+      goldenLayout.loadLayout(DEFAULT_LAYOUT);
+    }
 
     // Save layout on changes (only after initialization)
     goldenLayout.on('stateChanged', () => {

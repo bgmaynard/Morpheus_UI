@@ -1,13 +1,13 @@
 /**
  * Orders Panel - Active orders display
  *
- * Shows current open orders from event-derived state.
- * Cancel functionality sends commands - waits for events.
+ * Shows orders from Schwab account.
+ * Fetches on mount, then updates via ORDER_* events.
  */
 
 import { ComponentContainer } from 'golden-layout';
-import { useState, useMemo } from 'react';
-import { useOpenOrders, useAppStore, Order } from '../store/useAppStore';
+import { useState, useMemo, useEffect } from 'react';
+import { useOrders, useAppStore, Order } from '../store/useAppStore';
 import { getAPIClient } from '../morpheus/apiClient';
 import './panels.css';
 
@@ -70,14 +70,92 @@ function filterOrders(orders: Order[], tab: FilterTab): Order[] {
   }
 }
 
+// Map Schwab status to internal status
+function mapSchwabStatus(status: string): Order['status'] {
+  const statusMap: Record<string, Order['status']> = {
+    'WORKING': 'confirmed',
+    'PENDING_ACTIVATION': 'pending',
+    'QUEUED': 'pending',
+    'ACCEPTED': 'submitted',
+    'AWAITING_PARENT_ORDER': 'pending',
+    'AWAITING_CONDITION': 'pending',
+    'AWAITING_MANUAL_REVIEW': 'pending',
+    'PENDING_REPLACE': 'confirmed',
+    'PENDING_CANCEL': 'confirmed',
+    'FILLED': 'filled',
+    'CANCELED': 'cancelled',
+    'REJECTED': 'rejected',
+    'EXPIRED': 'cancelled',
+  };
+  return statusMap[status] || 'pending';
+}
+
 export function OrdersPanel({ container: _container }: Props) {
-  const openOrders = useOpenOrders();
+  const orders = useOrders();
+  const allOrders = Object.values(orders);
   const addPendingCommand = useAppStore((s) => s.addPendingCommand);
   const [activeTab, setActiveTab] = useState<FilterTab>('active');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch orders on mount
+  useEffect(() => {
+    const fetchOrders = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const client = getAPIClient();
+        const response = await client.getOrders();
+
+        // Update store with fetched orders
+        const store = useAppStore.getState();
+        for (const order of response.orders) {
+          // Map API order to store Order format
+          const storeOrder: Order = {
+            client_order_id: order.order_id,
+            symbol: order.symbol,
+            side: order.side.toLowerCase() as 'buy' | 'sell',
+            quantity: order.quantity,
+            filled_quantity: order.filled_quantity,
+            order_type: order.order_type,
+            limit_price: order.limit_price ?? undefined,
+            stop_price: order.stop_price ?? undefined,
+            status: mapSchwabStatus(order.status),
+            timestamp: order.entered_time,
+          };
+
+          // Directly update orders in store
+          store.processOrderEvent({
+            event_id: `init-${order.order_id}`,
+            event_type: storeOrder.status === 'filled' ? 'ORDER_FILL_RECEIVED' : 'ORDER_CONFIRMED',
+            timestamp: order.entered_time,
+            symbol: order.symbol,
+            payload: {
+              client_order_id: order.order_id,
+              symbol: order.symbol,
+              side: order.side.toLowerCase(),
+              quantity: order.quantity,
+              filled_quantity: order.filled_quantity,
+              order_type: order.order_type,
+              limit_price: order.limit_price,
+              status: order.status,
+            },
+          });
+        }
+      } catch (err) {
+        console.error('Failed to fetch orders:', err);
+        setError('Trading data unavailable');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, []);
 
   const filteredOrders = useMemo(
-    () => filterOrders(openOrders, activeTab),
-    [openOrders, activeTab]
+    () => filterOrders(allOrders, activeTab),
+    [allOrders, activeTab]
   );
 
   const handleCancel = async (clientOrderId: string) => {
@@ -111,7 +189,7 @@ export function OrdersPanel({ container: _container }: Props) {
   };
 
   // Count orders per tab for badge display
-  const activeCount = openOrders.filter((o) =>
+  const activeCount = allOrders.filter((o) =>
     ['pending', 'submitted', 'confirmed', 'partial'].includes(o.status)
   ).length;
 
@@ -168,7 +246,19 @@ export function OrdersPanel({ container: _container }: Props) {
             </tr>
           </thead>
           <tbody>
-            {filteredOrders.length === 0 ? (
+            {isLoading ? (
+              <tr>
+                <td colSpan={8} className="empty-message">
+                  Loading orders...
+                </td>
+              </tr>
+            ) : error ? (
+              <tr>
+                <td colSpan={8} className="empty-message">
+                  {error}
+                </td>
+              </tr>
+            ) : filteredOrders.length === 0 ? (
               <tr>
                 <td colSpan={8} className="empty-message">
                   No {activeTab === 'all' ? '' : activeTab + ' '}orders
@@ -176,14 +266,14 @@ export function OrdersPanel({ container: _container }: Props) {
               </tr>
             ) : (
               filteredOrders.map((order) => (
-                <tr key={order.client_order_id}>
-                  <td>{order.symbol}</td>
-                  <td className={order.side === 'buy' ? 'text-long' : 'text-short'}>
-                    {order.side.toUpperCase()}
+                <tr key={order.client_order_id || order.order_id}>
+                  <td>{order.symbol || '-'}</td>
+                  <td className={order.side?.toLowerCase() === 'buy' ? 'text-long' : 'text-short'}>
+                    {order.side?.toUpperCase() || '-'}
                   </td>
-                  <td>{order.quantity}</td>
-                  <td>{order.filled_quantity}</td>
-                  <td>{order.order_type}</td>
+                  <td>{order.quantity ?? '-'}</td>
+                  <td>{order.filled_quantity ?? '-'}</td>
+                  <td>{order.order_type || '-'}</td>
                   <td>{order.limit_price?.toFixed(2) || '-'}</td>
                   <td>
                     <span className={`status-badge ${getStatusClass(order.status)}`}>

@@ -1,14 +1,14 @@
 /**
  * Executions Panel - Trade execution log
  *
- * Shows filled orders from event-derived state.
- * Populated by ORDER_FILL_RECEIVED events from Schwab API.
- *
- * These are REAL executions from Schwab Paper Trading - not simulated.
+ * Shows transactions/executions from Schwab account.
+ * Fetches on mount, then shows from event-derived state.
  */
 
 import { ComponentContainer } from 'golden-layout';
-import { useExecutions, useOrders, useTrading } from '../store/useAppStore';
+import { useEffect, useState } from 'react';
+import { useExecutions, useOrders, useTrading, useAppStore, Execution } from '../store/useAppStore';
+import { getAPIClient } from '../morpheus/apiClient';
 import './panels.css';
 
 interface Props {
@@ -19,6 +19,63 @@ export function ExecutionsPanel({ container: _container }: Props) {
   const executions = useExecutions();
   const orders = useOrders();
   const trading = useTrading();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch transactions on mount
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const client = getAPIClient();
+        const response = await client.getTransactions();
+
+        // Update store with fetched transactions
+        const store = useAppStore.getState();
+        const currentExecIds = new Set(store.executions.map(e => e.exec_id));
+
+        for (const txn of response.transactions) {
+          // Skip if already in store
+          if (currentExecIds.has(txn.transaction_id)) continue;
+
+          // Create execution from transaction
+          const execution: Execution = {
+            exec_id: txn.transaction_id,
+            client_order_id: txn.order_id,
+            symbol: txn.symbol,
+            side: txn.side.toLowerCase() as 'buy' | 'sell',
+            quantity: txn.quantity,
+            price: txn.price,
+            timestamp: txn.timestamp,
+          };
+
+          // Add to executions via processExecutionEvent
+          store.processExecutionEvent({
+            event_id: `init-${txn.transaction_id}`,
+            event_type: 'ORDER_FILL_RECEIVED',
+            timestamp: txn.timestamp,
+            symbol: txn.symbol,
+            payload: {
+              exec_id: txn.transaction_id,
+              client_order_id: txn.order_id,
+              symbol: txn.symbol,
+              side: txn.side.toLowerCase(),
+              filled_quantity: txn.quantity,
+              fill_price: txn.price,
+            },
+          });
+        }
+      } catch (err) {
+        console.error('Failed to fetch transactions:', err);
+        setError('Trading data unavailable');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTransactions();
+  }, []);
 
   const formatTime = (ts: string) => {
     return new Date(ts).toLocaleTimeString();
@@ -41,7 +98,7 @@ export function ExecutionsPanel({ container: _container }: Props) {
         <span className="text-muted">Today: {executions.length}</span>
       </div>
       <div className="executions-info-banner">
-        Real Schwab executions only - manual TOS trades not shown
+        Schwab account executions
       </div>
       <div className="morpheus-panel-content">
         <table className="data-table">
@@ -56,7 +113,19 @@ export function ExecutionsPanel({ container: _container }: Props) {
             </tr>
           </thead>
           <tbody>
-            {executions.length === 0 ? (
+            {isLoading ? (
+              <tr>
+                <td colSpan={6} className="empty-message">
+                  Loading executions...
+                </td>
+              </tr>
+            ) : error ? (
+              <tr>
+                <td colSpan={6} className="empty-message">
+                  {error}
+                </td>
+              </tr>
+            ) : executions.length === 0 ? (
               <tr>
                 <td colSpan={6} className="empty-message">
                   No executions today
@@ -64,16 +133,16 @@ export function ExecutionsPanel({ container: _container }: Props) {
               </tr>
             ) : (
               executions.map((exec) => {
-                const status = getExecutionStatus(exec.client_order_id);
+                const status = getExecutionStatus(exec.client_order_id || exec.order_id);
                 return (
-                  <tr key={exec.exec_id}>
+                  <tr key={exec.exec_id || exec.transaction_id || Math.random()}>
                     <td className="text-muted">{formatTime(exec.timestamp)}</td>
-                    <td>{exec.symbol}</td>
-                    <td className={exec.side === 'buy' ? 'text-long' : 'text-short'}>
-                      {exec.side.toUpperCase()}
+                    <td>{exec.symbol || '-'}</td>
+                    <td className={exec.side?.toLowerCase() === 'buy' ? 'text-long' : 'text-short'}>
+                      {exec.side?.toUpperCase() || '-'}
                     </td>
-                    <td className="text-right">{exec.quantity}</td>
-                    <td className="text-right">${exec.price.toFixed(2)}</td>
+                    <td className="text-right">{exec.quantity ?? '-'}</td>
+                    <td className="text-right">${exec.price?.toFixed(2) || '0.00'}</td>
                     <td>
                       <span className={`status-badge ${status.toLowerCase()}`}>
                         {status}

@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run dev)",
+      "Bash(if exist \"C:\\\\Morpheus_AI\" echo \"Morpheus_AI exists\" else echo \"Morpheus_AI not found\")",
+      "Bash(xcopy:*)"
+    ]
+  }
+}

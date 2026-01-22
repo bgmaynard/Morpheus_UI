@@ -12,3 +12,4 @@ export { EventStreamPanel } from './EventStreamPanel';
 export { MorpheusDecisionPanel } from './MorpheusDecisionPanel';
 export { TradingControlsPanel } from './TradingControlsPanel';
 export { DecisionSupportPanel } from './DecisionSupportPanel';
+export { OrchestratorPanel } from './OrchestratorPanel';
