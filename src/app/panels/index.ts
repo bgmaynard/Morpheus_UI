@@ -13,3 +13,4 @@ export { MorpheusDecisionPanel } from './MorpheusDecisionPanel';
 export { TradingControlsPanel } from './TradingControlsPanel';
 export { DecisionSupportPanel } from './DecisionSupportPanel';
 export { OrchestratorPanel } from './OrchestratorPanel';
+export { StatsPanel } from './StatsPanel';

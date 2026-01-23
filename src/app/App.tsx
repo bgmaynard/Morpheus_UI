@@ -25,6 +25,7 @@ import {
   TradingControlsPanel,
   DecisionSupportPanel,
   OrchestratorPanel,
+  StatsPanel,
 } from './panels';
 import { ChainBar, StatusBar } from './components';
 import { useGlobalHotkeys } from './hooks/useHotkeys';
@@ -42,6 +43,7 @@ const PANEL_COMPONENTS: Record<string, React.FC<{ container: ComponentContainer 
   tradingControls: TradingControlsPanel,
   decisionSupport: DecisionSupportPanel,
   orchestrator: OrchestratorPanel,
+  stats: StatsPanel,
 };
 
 // Sanitize layout config to ensure sizes are strings (GoldenLayout v2 requirement)

@@ -298,6 +298,37 @@ export class MorpheusAPIClient {
   async getTransactions(): Promise<TransactionsResponse> {
     return this.request('/api/trading/transactions');
   }
+
+  // ========================================================================
+  // Stats Methods (Dashboard data)
+  // ========================================================================
+
+  // Get today's stats summary
+  async getTodayStats(): Promise<TodayStatsResponse> {
+    return this.request('/api/stats/today');
+  }
+
+  // Get rejection reasons breakdown
+  async getRejections(date?: string): Promise<RejectionsResponse> {
+    const params = date ? `?date=${date}` : '';
+    return this.request(`/api/stats/rejections${params}`);
+  }
+
+  // Get recent trades
+  async getTrades(limit?: number): Promise<TradesResponse> {
+    const params = limit ? `?limit=${limit}` : '';
+    return this.request(`/api/stats/trades${params}`);
+  }
+
+  // Get scanner status
+  async getScannerStatus(): Promise<ScannerStatusResponse> {
+    return this.request('/api/scanner/status');
+  }
+
+  // Get scanner watchlist
+  async getScannerWatchlist(): Promise<ScannerWatchlistResponse> {
+    return this.request('/api/scanner/watchlist');
+  }
 }
 
 // Market data types
@@ -383,6 +414,78 @@ export interface TransactionData {
 
 export interface TransactionsResponse {
   transactions: TransactionData[];
+}
+
+// Stats data types
+export interface TodayStatsResponse {
+  date: string;
+  signals_detected: number;
+  signals_rejected: number;
+  trades_total: number;
+  trades_closed: number;
+  trades_won: number;
+  trades_lost: number;
+  win_rate: number;
+  total_pnl: number;
+  top_rejection_reasons: Record<string, number>;
+}
+
+export interface RejectionsResponse {
+  rejections: Array<{
+    reason: string;
+    count: number;
+    percentage: number;
+  }>;
+  total: number;
+}
+
+export interface TradeData {
+  trade_id: string;
+  signal_id: string | null;
+  symbol: string;
+  direction: string;
+  trade_type: string;
+  status: string;
+  entry_price: number | null;
+  exit_price: number | null;
+  entry_time: string;
+  exit_time: string | null;
+  shares: number | null;
+  pnl: number | null;
+  pnl_percent: number | null;
+  exit_reason: string | null;
+}
+
+export interface TradesResponse {
+  trades: TradeData[];
+}
+
+export interface ScannerStatusResponse {
+  enabled: boolean;
+  scanner: {
+    running: boolean;
+    scans_performed: number;
+    candidates_found: number;
+    last_scan: string | null;
+    symbols_tracked: string[];
+  } | null;
+  watchlist: {
+    active_count: number;
+    symbols: string[];
+  } | null;
+}
+
+export interface WatchlistItem {
+  symbol: string;
+  state: string;
+  added_at: string;
+  score: number | null;
+  rvol: number | null;
+  change_pct: number | null;
+}
+
+export interface ScannerWatchlistResponse {
+  watchlist: WatchlistItem[];
 }
 
 // Singleton instance
